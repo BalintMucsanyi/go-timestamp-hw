@@ -91,12 +91,13 @@ func handleGetTimestamp(reqCh chan<- request) http.HandlerFunc {
 	}
 }
 
-func main() {
-	fmt.Println("Hello, World!")
+func newServer() http.Handler {
 	reqCh := make(chan request)
 	go timestampOwner(reqCh)
 
-	http.HandleFunc("/timestamp", func(w http.ResponseWriter, r *http.Request) {
+	mux := http.NewServeMux()
+
+	mux.HandleFunc("/timestamp", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == http.MethodPost {
 			handlePostTimestamp(reqCh)(w, r)
 			return
@@ -107,7 +108,13 @@ func main() {
 		}
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 	})
+
+	return mux
+}
+
+func main() {
+
 	fmt.Println("listening on :8080")
-	http.ListenAndServe(":8080", nil)
+	http.ListenAndServe(":8080", newServer())
 
 }
